@@ -104,13 +104,17 @@ class Arduino:
         self.serial.write(chr(value & 0x7F))
         self.serial.write(chr(value >> 7))
 
-    def string_write(self, string):
+    def send_sysex(self, command, data):
+        """Sending data to device via sysex"""
+        self._start_sysex()
+        self.serial.write(chr(command))
+        for byte in data:
+            self._send_value_as_two_7_bit(byte)
+        self._end_sysex()
+
+    def send_string(self, string):
         """Sending a string to device"""
-        self.serial.write(chr(START_SYSEX))
-        self.serial.write(chr(STRING_DATA))
-        for character in string:
-            self._send_value_as_two_7_bit(character)
-        self.serial.write(chr(END_SYSEX))
+        self.send_sysex(STRING_DATA, string)
     
     def set_version(self, major, minor):
         """Setting a minor and major version"""
@@ -183,3 +187,9 @@ class Arduino:
             value = ord(value)
         self.serial.write(chr(value & 0b01111111)) # LSB
         self.serial.write(chr(value >> 7 & 0b01111111)) # MSB
+
+    def _start_sysex(self):
+        self.serial.write(chr(START_SYSEX))
+
+    def _end_sysex(self):
+        self.serial.write(chr(END_SYSEX))
